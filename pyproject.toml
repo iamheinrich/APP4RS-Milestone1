@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "code"
+version = "0.1.0"
+description = ""
+authors = ["hendrik.schulze.broering <hendrik.schulze.broering@googlemail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+numpy = ">=2.1.0"
+pandas = ">=2.2.0"
+pyarrow = ">=17.0.0"
+duckdb = ">=1.1.0"
+polars = ">=1.8.0"
+geopandas = ">=1.0.0"
+rasterio = ">=1.4.0"
+rioxarray = ">=0.17.0"
+geocube = ">=0.7.0"
+folium = ">=0.16.0"
+matplotlib = ">=3.9.0"
+dask = ">=2024.9.0"
+ray = ">=2.36.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
