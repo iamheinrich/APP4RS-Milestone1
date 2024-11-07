@@ -8,6 +8,8 @@ def main():
     print_avg_num_labels(path)
     print_max_num_labels(path)
 
+    # Task: Working with geospatial vector data
+
 
 if __name__ == "__main__":
     main()
