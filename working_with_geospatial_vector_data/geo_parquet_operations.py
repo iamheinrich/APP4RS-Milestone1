@@ -10,6 +10,12 @@ def analyze_label_stats_of_geoparquet_files(file_path: str):
     conn.execute("INSTALL spatial;")
     conn.execute("LOAD spatial;")
 
+    # Check if each field in the DN column contains exactly one integer
+    QUERY_CHECK_DN_FIELD = f"SELECT DN FROM read_parquet('{
+        file_path}/*.parquet')"
+    dn_df = conn.execute(QUERY_CHECK_DN_FIELD).df()
+    assert all(isinstance(x, int) for x in dn_df['DN'])
+
     # Check if all class ids from the parquet files are valid
     QUERY_VALIDATE_CLASS_IDS = f"SELECT DISTINCT DN FROM read_parquet('{
         file_path}/*.parquet')"
@@ -47,7 +53,7 @@ def print_avg_num_labels(file_path: str):
     print(
         f"geom-average-num-labels: {label_stats_df['average_num_labels'][0]:.2f}")
 
-    # Utilize the geographical information to count all overlapping patches
-    # Patches are considered overlapping if they share any interior point.
-    # For simplicity, we will assume that all geometries use the same coordinate reference system.
-    # Print the result in the following format: geom-num-overlaps: #overlaps
+# Utilize the geographical information to count all overlapping patches
+# Patches are considered overlapping if they share any interior point.
+# For simplicity, we will assume that all geometries use the same coordinate reference system.
+# Print the result in the following format: geom-num-overlaps: #overlaps
