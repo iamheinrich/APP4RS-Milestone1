@@ -57,3 +57,56 @@ def print_avg_num_labels(file_path: str):
 # Patches are considered overlapping if they share any interior point.
 # For simplicity, we will assume that all geometries use the same coordinate reference system.
 # Print the result in the following format: geom-num-overlaps: #overlaps
+
+# Understand that one parquet file represents one patch.
+
+
+def read_geoparquet_file(file_path: str):
+    # Load the geoparquet files using duckdb
+    conn = duckdb.connect(database=':memory:')
+    conn.execute("INSTALL spatial;")
+    conn.execute("LOAD spatial;")
+
+    return conn.execute(f"SELECT * FROM read_parquet('{file_path}')").df()
+
+
+def print_num_overlapping_patches(file_path: str):
+    conn = duckdb.connect(database=':memory:')
+    conn.execute("INSTALL spatial;")
+    conn.execute("LOAD spatial;")
+
+    # Create a table to store unified patches
+    conn.execute(
+        "CREATE TABLE unified_patches (patch_id INTEGER, unified_geometry GEOMETRY)")
+
+    # Get list of all parquet files
+    files = conn.execute(
+        f"SELECT * FROM glob('{file_path}/*.parquet')").df()
+
+    # Process each file and store its unified geometry
+    for idx, file_path in enumerate(files['file']):
+        conn.execute(f"""
+            INSERT INTO unified_patches
+            SELECT
+                {idx} as patch_id,
+                ST_Union_Agg(geometry) as unified_geometry
+            FROM read_parquet('{file_path}')
+        """)
+
+    # Now check for overlaps between unified patches
+    overlaps = conn.execute("""
+        WITH overlap_counts AS (
+            SELECT 
+                a.patch_id,
+                COUNT(*) as num_overlaps
+            FROM unified_patches a
+            JOIN unified_patches b ON a.patch_id < b.patch_id
+            WHERE ST_Intersects(a.unified_geometry, b.unified_geometry)
+            GROUP BY a.patch_id
+        )
+        SELECT 
+            COUNT(*) as total_overlaps,
+        FROM overlap_counts
+    """).df()
+
+    print(f"geom-num-overlaps: {int(overlaps['total_overlaps'][0])}")
