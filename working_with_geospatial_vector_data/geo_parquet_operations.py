@@ -70,20 +70,23 @@ def read_geoparquet_file(file_path: str):
     return conn.execute(f"SELECT * FROM read_parquet('{file_path}')").df()
 
 
-def print_num_overlapping_patches(file_path: str):
+def create_duckdb_connection():
     conn = duckdb.connect(database=':memory:')
     conn.execute("INSTALL spatial;")
     conn.execute("LOAD spatial;")
+    return conn
 
-    # Create a table to store unified patches
+
+def get_parquet_files(conn, file_path: str):
+    return conn.execute(f"SELECT * FROM glob('{file_path}/*.parquet')").df()
+
+
+def create_unified_patches_table(conn):
     conn.execute(
         "CREATE TABLE unified_patches (patch_id INTEGER, unified_geometry GEOMETRY)")
 
-    # Get list of all parquet files
-    files = conn.execute(
-        f"SELECT * FROM glob('{file_path}/*.parquet')").df()
 
-    # Process each file and store its unified geometry
+def populate_unified_patches(conn, files):
     for idx, file_path in enumerate(files['file']):
         conn.execute(f"""
             INSERT INTO unified_patches
@@ -93,7 +96,8 @@ def print_num_overlapping_patches(file_path: str):
             FROM read_parquet('{file_path}')
         """)
 
-    # Now check for overlaps between unified patches
+
+def calculate_overlapping_patches(conn) -> int:
     overlaps = conn.execute("""
         WITH overlap_counts AS (
             SELECT 
@@ -104,9 +108,27 @@ def print_num_overlapping_patches(file_path: str):
             WHERE ST_Intersects(a.unified_geometry, b.unified_geometry)
             GROUP BY a.patch_id
         )
-        SELECT 
-            COUNT(*) as total_overlaps,
+        SELECT COUNT(*) as total_overlaps
         FROM overlap_counts
     """).df()
 
-    print(f"geom-num-overlaps: {int(overlaps['total_overlaps'][0])}")
+    return int(overlaps['total_overlaps'][0])
+
+
+def get_num_overlapping_patches(file_path: str) -> int:
+    conn = create_duckdb_connection()
+    create_unified_patches_table(conn)
+
+    files = get_parquet_files(conn, file_path)
+    populate_unified_patches(conn, files)
+    num_overlaps = calculate_overlapping_patches(conn)
+
+    assert num_overlaps <= len(files), f"Expected{
+        num_overlaps} <= {len(files)}."
+
+    return num_overlaps
+
+
+def print_num_overlapping_patches(file_path: str):
+    num_overlaps = get_num_overlapping_patches(file_path)
+    print(f"geom-num-overlaps: {num_overlaps}")
