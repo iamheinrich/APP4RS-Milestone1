@@ -1,0 +1,33 @@
+#Folder containing untracked data
+/untracked-files/
+
+# Folder for tests
+/tests/
+#Mac Artifacts
+.DS_Store
+
+# __init__.py files
+__init__.py
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environments
+venv/
+env/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# IDE-specific files
+.vscode/
+.idea/
+
+# Generated files
+*.log
+*.csv
+*.json
