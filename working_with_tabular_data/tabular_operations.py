@@ -72,7 +72,7 @@ def print_avg_num_labels(metadata_path: str):
     label_counts = get_label_statistics(metadata_path)
     avg_num_labels = label_counts.mean()  # More efficient than sum/len
     print(
-        f"average-num-labels: AVG rounded to two decimals ({round(avg_num_labels, 2)})")
+        f"average-num-labels: {round(avg_num_labels, 2)}")
 
 
 def print_max_num_labels(metadata_path: str):
